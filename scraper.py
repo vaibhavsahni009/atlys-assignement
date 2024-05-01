@@ -354,6 +354,7 @@ async def hello():
 
 @app.get("/scrape/")
 async def read_items(
+    # lt(less than) Could be dynamic here and could be possibly scraped in regular intervals before hand
     pages: int = Query(default=1, ge=1, lt=120, description="Number of pages to scrape", alias="pages"),
     proxy: Optional[str] = Query(default=None, description="Proxy server address", alias="proxy"),
     x_token: str = Header(...),
@@ -367,12 +368,16 @@ async def read_items(
         assert isinstance(proxy, str), f"proxy must be a string, got {type(proxy).__name__}"
 
     url = "https://dentalstall.com/shop/"
+    # Proxy while I added but wasn't able to test it as of now
     scraper = Scraper(proxy=proxy)
     storage = LocalStorage("scraped_data.json")
     notifier = Notifier()
     
     scraping_manager = ScrapingManager(scraper, storage, notifier)
     scraping_manager.scrape_and_store(url, pages=pages)
+    # We could possible put this entire operation behind a message queue which could polled when needed as part of future scope
+    # As scraping in some cases does take time and we don't want to block the rest of the application
+    # and avoid possible 504 Timeout errors errors
     return {"message": "Scraping completed"}
 
 
