@@ -304,42 +304,42 @@ class ScrapingManager:
         """
         return [{"product_title": k, "product_price": v[0], "path_to_image": v[1]} for k, v in self.data_cache.items()]
 
-            
-def download_image(self, url: str, title: str) -> str:
-    """
-    Download image from url and save it in local storage
-    Return the path of image relative to this file
+                
+    def download_image(self, url: str, title: str) -> str:
+        """
+        Download image from url and save it in local storage
+        Return the path of image relative to this file
 
-    url: str - URL of image
-    title: str - title of image
-    """
-    # Ensure that the relative directory exists
-    relative_path = "product_images"
-    directory = os.path.join(os.getcwd(), relative_path)
-    ext = url.split(".")[-1]
-    os.makedirs(directory, exist_ok=True)
-    image_path = f"{relative_path}/{title}.{ext}"
+        url: str - URL of image
+        title: str - title of image
+        """
+        # Ensure that the relative directory exists
+        relative_path = "product_images"
+        directory = os.path.join(os.getcwd(), relative_path)
+        ext = url.split(".")[-1]
+        os.makedirs(directory, exist_ok=True)
+        image_path = f"{relative_path}/{title}.{ext}"
 
-    # Downloading image synchronously, could be done asynchronously for better performance
-    with requests.get(url, stream=True) as r:
-        r.raise_for_status()
-        with open(image_path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+        # Downloading image synchronously, could be done asynchronously for better performance
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(image_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
 
-    # Todo: Future scope: 
-    # - Asynchronous downloading: Consider using asynchronous libraries like aiohttp
-    #   to download images concurrently, improving performance.
-    # - Offloading to another service: Instead of saving locally, consider offloading 
-    #   image storage to a cloud service like AWS S3 and downloading could be offloaded to a
-    #   separate service or atleast a lambda function that is benfecial if we don't need the images immedietely.
-    #   This would provide scalability, durability, and easier management of images.
-    # - Error handling and retries: Implement robust error handling and retries
-    #   for network failures or other issues during image download.
+        # Todo: Future scope: 
+        # - Asynchronous downloading: Consider using asynchronous libraries like aiohttp
+        #   to download images concurrently, improving performance.
+        # - Offloading to another service: Instead of saving locally, consider offloading 
+        #   image storage to a cloud service like AWS S3 and downloading could be offloaded to a
+        #   separate service or atleast a lambda function that is benfecial if we don't need the images immedietely.
+        #   This would provide scalability, durability, and easier management of images.
+        # - Error handling and retries: Implement robust error handling and retries
+        #   for network failures or other issues during image download.
 
 
-    return image_path
+        return image_path
 
 
 
@@ -374,6 +374,5 @@ async def read_items(
     scraping_manager = ScrapingManager(scraper, storage, notifier)
     scraping_manager.scrape_and_store(url, pages=pages)
     return {"message": "Scraping completed"}
-
 
 
