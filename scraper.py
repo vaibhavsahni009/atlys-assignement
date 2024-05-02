@@ -60,6 +60,7 @@ class Scraper:
         max_retries: int - Maximum number of retries to attempt
         Returns str or None if the page could not be fetched
         """
+        print(url)
         retries = 0
         while retries < max_retries:
             try:
@@ -87,11 +88,12 @@ class Scraper:
         html_content: str - HTML content of the page
         Returns list of products, where each product is a dict with fields:
             "product_title" (str), "image_src" (str), "product_price" (float)
+        """
 
         # TODO(in future scope):
         # We can do multithreading here to speed up the scraping process,
         # keep _scrape_product_info logic in a seperate function for that
-        """
+        
         # Parse the HTML content
         soup = BeautifulSoup(html_content, "html.parser")
 
@@ -123,7 +125,14 @@ class Scraper:
 
         # Extract image source
         image_element = li_element.find("img", class_="attachment-woocommerce_thumbnail")
-        product["image_src"] = image_element["src"] if image_element else ""
+        if image_element:
+            if "data-lazy-src" in image_element.attrs:
+                product["image_src"] = image_element["data-lazy-src"]
+            else:
+                product["image_src"] = image_element["src"] if "src" in image_element.attrs else ""
+        else:
+            product["image_src"] = ""
+
         assert isinstance(product["image_src"], str)
 
         # Extract price
@@ -250,13 +259,16 @@ class ScrapingManager:
         """
         self.db_cache_fetch()
         for page_num in range(1, pages + 1):
-            page_url = f"{url}?page={page_num}"
+            page_url = f"{url}/page/{page_num}"
             html = self.scraper.fetch_page(page_url)
             if html:
                 products_info = self.scraper.scrape_product_info(html)
                 self.db_cache_extend(products_info)
                 self.notifier.notify(f"{len(products_info)} products scraped from page {page_num}.")
-                time.sleep(1)  # Add a delay between requests
+                print(products_info)
+                print()
+                print(len(self.data_cache),self.data_cache)
+                # time.sleep(1)  # Add a delay between requests
         data = self.db_cache_to_dict()
         self.storage.save_to_json(data)
 
@@ -321,12 +333,17 @@ class ScrapingManager:
         image_path = f"{relative_path}/{title}.{ext}"
 
         # Downloading image synchronously, could be done asynchronously for better performance
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(image_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        try:
+            with requests.get(url, stream=True) as r:
+                r.raise_for_status()
+                with open(image_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+            return image_path
+        except Exception:
+            print(url,"not downloaded")
+            return "not downloaded"
 
         # Todo: Future scope: 
         # - Asynchronous downloading: Consider using asynchronous libraries like aiohttp
