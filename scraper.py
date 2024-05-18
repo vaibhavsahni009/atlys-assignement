@@ -303,7 +303,7 @@ class ScrapingManager:
             product_title = product["product_title"]
             product_price = product["product_price"]
             product_img = product["image_src"]
-            if product_title not in self.data_cache:
+            if product_title not in self.data_cache or product_price != self.data_cache[product_title][0]:
                 product_img_path = self.download_image(product_img, product_title)
                 self.data_cache[product_title] = [product_price, product_img_path]
             self.data_cache[product_title][0] = product_price
